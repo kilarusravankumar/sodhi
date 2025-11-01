@@ -1,0 +1,10 @@
+-std=c++17
+-I/home/kreten/Qt/6.9.3/gcc_64/include
+-I/home/kreten/Qt/6.9.3/gcc_64/include/QtCore
+-I/home/kreten/Qt/6.9.3/gcc_64/include/QtWidgets
+-I/home/kreten/Qt/6.9.3/gcc_64/include/QtGui
+-I/home/kreten/Qt/6.9.3/gcc_64/include/QtNetwork
+-DQT_CORE_LIB
+-DQT_GUI_LIB
+-DQT_WIDGETS_LIB
+-fPIC
