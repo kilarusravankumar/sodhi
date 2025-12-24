@@ -1,34 +1,37 @@
 #ifndef LOGIN_H
 #define LOGIN_H
 
-#include <QWidget>
+#include "user.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QString>
-#include "user.h"
+#include <QWidget>
+#include <qjsonobject.h>
+#include <qnetworkaccessmanager.h>
+#include <qnetworkrequest.h>
 
-class Login : public QWidget
-{
-    Q_OBJECT
+class Login : public QWidget {
+  Q_OBJECT
 
 public:
-    explicit Login(QWidget *parent = nullptr);
-
+  Login(QWidget *parent = nullptr, QNetworkAccessManager *manager = nullptr);
+  void processSuccessfulReply(const QByteArray &replyData);
 signals:
-    void backClicked();
-
+  void loginSuccessful(const QString &activeToken, const QString &refreshToken,
+                     const QJsonObject &data);
+  void backClicked();
 private slots:
-    void loginUser();
+  void loginUser();
 
 private:
-    QLineEdit *usernameEdit;
-    QLineEdit *passwordEdit;
-    QPushButton *loginButton;
-    QPushButton *backButton;
-
-    QString activeToken;
-    QString refreshToken;
-    User user;
+  QLineEdit *usernameEdit;
+  QLineEdit *passwordEdit;
+  QPushButton *loginButton;
+  QPushButton *backButton;
+  QNetworkAccessManager *manager;
+  QString activeToken;
+  QString refreshToken;
+  User user;
 };
 
 #endif // LOGIN_H

@@ -1,3 +1,7 @@
 build
 .cache
 .clangd
+build_test/
+.zig-cache/
+compile_flags.txt
+config
