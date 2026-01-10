@@ -1,4 +1,6 @@
 #include "dashboard.h"
+#include "commandpalette.h"
+#include "messagebubble.h"
 #include "room.h"
 #include "roomslayout.h"
 #include "user.h"
@@ -6,11 +8,15 @@
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QShortcut>
 #include <QSplitter>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -19,6 +25,7 @@
 #include <qjsonarray.h>
 #include <qjsonobject.h>
 #include <qjsonvalue.h>
+#include <qlogging.h>
 #include <qnamespace.h>
 #include <qnetworkrequest.h>
 #include <qsplitter.h>
@@ -27,10 +34,15 @@
 #include <qwebsocket.h>
 #include <qwidget.h>
 
-Dashboard::Dashboard(const QString &token, const QJsonObject &data,
+Dashboard::Dashboard(Config *config, const QString &token, const QJsonObject &data,
                      QWidget *parent)
-    : QWidget(parent), activeRoom(nullptr), m_webSocket(new QWebSocket),
-      m_chatInput(nullptr), m_chatLayout(nullptr) {
+    : QWidget(parent), m_config(config), activeRoom(nullptr), m_webSocket(new QWebSocket),
+      m_chatInput(nullptr), m_chatLayout(nullptr), m_chatPlaceholder(nullptr),
+      m_activeToken(token), m_networkManager(new QNetworkAccessManager(this)) {
+
+  m_commandPaletteShortcut = new QShortcut(QKeySequence("Ctrl+P"), this);
+  connect(m_commandPaletteShortcut, &QShortcut::activated, this,
+          &Dashboard::openCommandPalette);
 
   const QJsonObject userJsonObj = data["user"].toObject();
   user = new User(
@@ -61,9 +73,11 @@ Dashboard::Dashboard(const QString &token, const QJsonObject &data,
     activeRoom = &rooms[0];
   }
 
+  qDebug() << "user logged in as" << user->username();
+
   layout(data);
 
-  QUrl url("ws://localhost:8080/api/v1/chat");
+  QUrl url(m_config->wsBaseUrl() + "/chat");
   QNetworkRequest request(url);
   QString bearerToken = "Bearer " + token;
   request.setRawHeader("Authorization", bearerToken.toLocal8Bit());
@@ -88,17 +102,26 @@ void Dashboard::onTextMessageReceived(const QString &message) {
 }
 
 void Dashboard::onBinaryMessageReceived(const QByteArray &message) {
-  if (m_chatLayout) {
-    qDebug() << "Binary message received: " << message;
+  if (m_chatLayout && activeRoom) {
     Message msg = Message::fromJson(message);
-    QLabel *messageLabel = new QLabel(msg.msgContent(), this);
-    messageLabel->setWordWrap(true);
-    m_chatLayout->addWidget(messageLabel);
+
+    if (m_chatPlaceholder) {
+      m_chatPlaceholder->hide();
+      m_chatLayout->removeWidget(m_chatPlaceholder);
+      m_chatPlaceholder->deleteLater();
+      m_chatPlaceholder = nullptr;
+    }
+
+    activeRoom->appendMessage(msg);
+
+    bool isSelf = (msg.sentBy().id() == user->id());
+    MessageBubble *bubble = new MessageBubble(msg, isSelf, this);
+    m_chatLayout->addWidget(bubble);
   }
 }
 
 void Dashboard::onSendMessage() {
-  if (m_chatInput && !m_chatInput->text().isEmpty()) {
+  if (m_chatInput && !m_chatInput->text().isEmpty() && activeRoom) {
     QJsonObject jsonObj;
     jsonObj["message"] = m_chatInput->text();
 
@@ -108,6 +131,7 @@ void Dashboard::onSendMessage() {
     jsonObj["sent_timestamp"] = sentTimestamp;
     jsonObj["room_id"] = activeRoom->id();
     jsonObj["sent_by"] = user->id();
+    jsonObj["sender"] = user->toJson();
     QJsonDocument jsonDoc(jsonObj);
     m_webSocket->sendBinaryMessage(jsonDoc.toJson(QJsonDocument::Compact));
     m_chatInput->clear();
@@ -120,17 +144,17 @@ void Dashboard::layout(const QJsonObject &data) {
   mainLayout->setContentsMargins(0, 0, 0, 0);
 
   // Create a splitter to divide rooms list from the chat view
-  QSplitter *splitter = new QSplitter(Qt::Horizontal, this);
+  m_splitter = new QSplitter(Qt::Horizontal, this);
 
   QWidget *leftPanel = roomListPanel(data);
   QWidget *rightPanel = chatWindow(data);
 
   // Add panels to splitter and set initial sizes
-  splitter->addWidget(leftPanel);
-  splitter->addWidget(rightPanel);
-  splitter->setSizes({200, 600}); // Initial size ratio
+  m_splitter->addWidget(leftPanel);
+  m_splitter->addWidget(rightPanel);
+  m_splitter->setSizes({200, 600}); // Initial size ratio
 
-  mainLayout->addWidget(splitter);
+  mainLayout->addWidget(m_splitter);
   setLayout(mainLayout);
 }
 
@@ -141,7 +165,7 @@ QWidget *Dashboard::roomListPanel(const QJsonObject &data) {
   QVBoxLayout *leftLayout = new QVBoxLayout(leftPanel);
   leftLayout->setContentsMargins(10, 10, 10, 10);
   leftLayout->setSpacing(10);
-  RoomsLayout *rooms = new RoomsLayout(data, leftPanel);
+  RoomsLayout *rooms = new RoomsLayout(data, activeRoom, leftPanel);
   leftPanel->setLayout(leftLayout);
   return leftPanel;
 }
@@ -162,10 +186,11 @@ QWidget *Dashboard::chatWindow(const QJsonObject &data) {
   QWidget *chatContent = new QWidget(chatArea);
   m_chatLayout = new QVBoxLayout(chatContent);
   m_chatLayout->setAlignment(Qt::AlignTop);
-  QLabel *chatPlaceholder =
-      new QLabel("Messages will appear here...", chatContent);
-  chatPlaceholder->setStyleSheet("color: #888;");
-  m_chatLayout->addWidget(chatPlaceholder);
+
+  m_chatPlaceholder = new QLabel("Messages will appear here...", chatContent);
+  m_chatPlaceholder->setStyleSheet("color: #888;");
+  m_chatLayout->addWidget(m_chatPlaceholder);
+
   chatContent->setLayout(m_chatLayout);
   chatArea->setWidget(chatContent);
 
@@ -197,6 +222,134 @@ QWidget *Dashboard::chatWindow(const QJsonObject &data) {
 
 User Dashboard::getUser() const { return *user; }
 
-Room Dashboard::getActiveRoom() const { return *activeRoom; }
+Room *Dashboard::getActiveRoom() const { return activeRoom; }
 
 std::vector<Room> Dashboard::allRooms() { return rooms; }
+
+void Dashboard::openCommandPalette() {
+  CommandPalette *palette = CommandPalette::instance(this);
+  connect(palette, &CommandPalette::createRoomRequested, this,
+          &Dashboard::createRoom, Qt::UniqueConnection);
+  palette->exec();
+}
+
+void Dashboard::createRoom(const QString &roomName) {
+  QUrl url(m_config->apiBaseUrl() + "/room");
+  QNetworkRequest request(url);
+  request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+  QString bearerToken = "Bearer " + m_activeToken;
+  request.setRawHeader("Authorization", bearerToken.toUtf8());
+  request.setRawHeader("user-id", user->id().toLocal8Bit());
+
+  qDebug() << "user id  i am passing is " << user->id();
+  qDebug() << "user id belongs to user " << user->username();
+  QJsonObject jsonBody;
+  jsonBody["room_name"] = roomName;
+  jsonBody["user_id"] = user->id();
+  jsonBody["active_token"] = m_activeToken;
+  jsonBody["is_dm"] = false;
+
+  QJsonDocument doc(jsonBody);
+  QByteArray data = doc.toJson();
+
+  QNetworkReply *reply = m_networkManager->post(request, data);
+  connect(reply, &QNetworkReply::finished, [this, reply]() {
+    if (reply->error() == QNetworkReply::NoError) {
+      QByteArray responseBytes = reply->readAll();
+      qDebug() << "Room created successfully:" << responseBytes;
+
+      QJsonDocument doc = QJsonDocument::fromJson(responseBytes);
+      QJsonObject responseObj = doc.object();
+      if (responseObj.contains("dashboard_data")) {
+        refreshDashboard(responseObj["dashboard_data"].toObject());
+      }
+    } else {
+      qDebug() << "Error creating room:" << reply->errorString();
+    }
+    reply->deleteLater();
+  });
+}
+
+void Dashboard::refreshDashboard(const QJsonObject &data) {
+  rooms.clear();
+  QJsonArray roomsJsonArr = data["rooms"].toArray();
+
+  for (const QJsonValue &r : roomsJsonArr) {
+    QJsonObject roomObj = r.toObject();
+    QString id = roomObj["id"].toString();
+    QString name = roomObj["name"].toString();
+    bool isDm = roomObj["is_dm"].toBool();
+
+    std::vector<User> roomMembers;
+    QJsonArray membersArr = roomObj["members"].toArray();
+    for (const QJsonValue &m : membersArr) {
+      QJsonObject memberObj = m.toObject();
+      roomMembers.emplace_back(memberObj["id"].toString(),
+                               memberObj["username"].toString(),
+                               memberObj["email"].toString(), QVariant());
+    }
+
+    std::vector<Message> messages;
+    rooms.emplace_back(id, name, isDm, roomMembers, messages);
+  }
+
+  if (!rooms.empty()) {
+    activeRoom = &rooms[0];
+  } else {
+    activeRoom = nullptr;
+  }
+
+  // Refresh the UI
+  if (m_splitter) {
+    QWidget *oldLeftPanel = m_splitter->widget(0);
+    if (oldLeftPanel) {
+      oldLeftPanel->hide();
+      oldLeftPanel->deleteLater();
+    }
+
+    QWidget *newLeftPanel = roomListPanel(data);
+    m_splitter->insertWidget(0, newLeftPanel);
+
+    QList<int> currentSizes = m_splitter->sizes();
+    if (currentSizes.size() >= 2) {
+      m_splitter->setSizes(currentSizes);
+    }
+  }
+
+  loadChatWindow();
+}
+
+void Dashboard::loadChatWindow() {
+    if (!m_chatLayout) return;
+
+    // Clear existing items
+    QLayoutItem *child;
+    while ((child = m_chatLayout->takeAt(0)) != nullptr) {
+        if (child->widget()) {
+            delete child->widget();
+        }
+        delete child;
+    }
+
+    if (!activeRoom) {
+         m_chatPlaceholder = new QLabel("No room selected", this);
+         m_chatPlaceholder->setStyleSheet("color: #888;");
+         m_chatLayout->addWidget(m_chatPlaceholder);
+         return;
+    }
+
+    std::vector<Message> msgs = activeRoom->messages();
+    if (msgs.empty()) {
+         m_chatPlaceholder = new QLabel("Messages will appear here...", this);
+         m_chatPlaceholder->setStyleSheet("color: #888;");
+         m_chatLayout->addWidget(m_chatPlaceholder);
+    } else {
+        m_chatPlaceholder = nullptr;
+        for (const Message &msg : msgs) {
+            bool isSelf = (msg.sentBy().id() == user->id());
+            MessageBubble *bubble = new MessageBubble(msg, isSelf, this);
+            m_chatLayout->addWidget(bubble);
+        }
+    }
+}

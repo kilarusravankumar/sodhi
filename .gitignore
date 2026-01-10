@@ -4,4 +4,4 @@ build
 build_test/
 .zig-cache/
 compile_flags.txt
-config
+config.env
