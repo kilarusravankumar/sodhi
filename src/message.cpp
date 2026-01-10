@@ -8,7 +8,7 @@ Message::Message(const QString &msgContent, const QString &sentTimestamp,
                  const QString &sentBy)
     : m_id(0), m_content(msgContent),
       m_sentTimestamp(QDateTime::fromString(sentTimestamp, Qt::ISODate)),
-      m_senderName(sentBy) {}
+      m_sentByUuid(QUuid::fromString(sentBy)) {}
 
 Message Message::fromJson(const QByteArray &jsonBytes) {
   QJsonDocument doc = QJsonDocument::fromJson(jsonBytes);
@@ -19,7 +19,6 @@ Message Message::fromJson(const QByteArray &jsonBytes) {
 }
 
 Message Message::fromJson(const QJsonObject &jsonObj) {
-  qDebug() << "in fromJson func" << jsonObj;
   Message msg;
   // Use toVariant().toLongLong() for broader compatibility, though toInteger()
   // works in Qt6
@@ -32,7 +31,10 @@ Message Message::fromJson(const QJsonObject &jsonObj) {
   msg.m_roomId = QUuid::fromString(jsonObj["room_id"].toString());
   msg.m_sentByUuid = QUuid::fromString(jsonObj["sent_by"].toString());
 
-  msg.m_senderName = jsonObj["sender"].toString();
+  msg.m_sender = User(jsonObj["sender"]["id"].toString(),
+                      jsonObj["sender"]["username"].toString(),
+                      jsonObj["sender"]["email"].toString(), QVariant());
+  ;
 
   return msg;
 }
@@ -43,7 +45,7 @@ QString Message::sentTimestamp() const {
   return m_sentTimestamp.toString(Qt::ISODate);
 }
 
-QString Message::sentBy() const { return m_senderName; }
+User Message::sentBy() const { return m_sender; }
 
 qint64 Message::id() const { return m_id; }
 

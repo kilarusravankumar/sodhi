@@ -12,8 +12,8 @@
 #include <qnetworkaccessmanager.h>
 #include <qnetworkrequest.h>
 
-Login::Login(QWidget *parent, QNetworkAccessManager *manager)
-    : QWidget(parent), manager(manager) {
+Login::Login(Config *config, QWidget *parent, QNetworkAccessManager *manager)
+    : QWidget(parent), m_config(config), manager(manager) {
   setWindowTitle("Login");
 
   usernameEdit = new QLineEdit;
@@ -91,7 +91,7 @@ Login::Login(QWidget *parent, QNetworkAccessManager *manager)
 // }
 
 void Login::loginUser() {
-  QNetworkRequest request(QUrl("http://localhost:8080/api/v1/login"));
+  QNetworkRequest request(QUrl(m_config->apiBaseUrl() + "/login"));
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
   QJsonObject json;

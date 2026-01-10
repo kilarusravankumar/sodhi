@@ -1,4 +1,5 @@
 #include "roomslayout.h"
+#include "room.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLabel>
@@ -9,7 +10,8 @@
 #include <qdebug.h>
 #include <qjsondocument.h>
 
-RoomsLayout::RoomsLayout(const QJsonObject &roomsData, QWidget *parent)
+RoomsLayout::RoomsLayout(const QJsonObject &roomsData, Room *activeRoom,
+                         QWidget *parent)
     : QWidget(parent) {
   setMinimumHeight(600);
   QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -36,8 +38,17 @@ RoomsLayout::RoomsLayout(const QJsonObject &roomsData, QWidget *parent)
 
     QLabel *roomLabel =
         new QLabel(QString("# %1").arg(roomName), roomsScrollContent);
-    roomLabel->setStyleSheet("font-size: 16px; font-weight: bold; color: #999");
-    roomsScrollLayout->addWidget(roomLabel);
+    if (roomName == activeRoom->name()) {
+
+      roomLabel->setStyleSheet(
+          "font-size: 18px; font-weight: bold; color: #06404B");
+      roomsScrollLayout->addWidget(roomLabel);
+    } else {
+
+      roomLabel->setStyleSheet(
+          "font-size: 16px; font-weight: bold; color: #999");
+      roomsScrollLayout->addWidget(roomLabel);
+    }
 
     const QJsonArray members = roomObj["members"].toArray();
     for (const QJsonValue &memberValue : members) {

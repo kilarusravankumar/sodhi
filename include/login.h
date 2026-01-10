@@ -2,6 +2,7 @@
 #define LOGIN_H
 
 #include "user.h"
+#include "config.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QString>
@@ -14,7 +15,7 @@ class Login : public QWidget {
   Q_OBJECT
 
 public:
-  Login(QWidget *parent = nullptr, QNetworkAccessManager *manager = nullptr);
+  Login(Config *config, QWidget *parent = nullptr, QNetworkAccessManager *manager = nullptr);
   void processSuccessfulReply(const QByteArray &replyData);
 signals:
   void loginSuccessful(const QString &activeToken, const QString &refreshToken,
@@ -24,6 +25,7 @@ private slots:
   void loginUser();
 
 private:
+  Config *m_config;
   QLineEdit *usernameEdit;
   QLineEdit *passwordEdit;
   QPushButton *loginButton;

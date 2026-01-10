@@ -9,8 +9,8 @@
 #include <QNetworkRequest>
 #include <QVBoxLayout>
 
-Register::Register(QWidget *parent, QNetworkAccessManager *manager)
-    : QWidget(parent), manager(manager) {
+Register::Register(Config *config, QWidget *parent, QNetworkAccessManager *manager)
+    : QWidget(parent), m_config(config), manager(manager) {
   setWindowTitle("Register");
 
   usernameEdit = new QLineEdit;
@@ -71,7 +71,7 @@ bool Register::registerUser() {
 
   registerButton->setEnabled(false);
 
-  QNetworkRequest request(QUrl("http://localhost:8080/api/v1/register"));
+  QNetworkRequest request(QUrl(m_config->apiBaseUrl() + "/register"));
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
   QJsonObject json;

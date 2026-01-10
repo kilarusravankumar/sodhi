@@ -4,22 +4,23 @@
 #include <QString>
 #include <QVariant>
 
-class User
-{
+class User {
 public:
-    User() = default;
-    User(const QString &id, const QString &username, const QString &email, const QVariant &friends);
+  User() = default;
+  User(const QString &id, const QString &username, const QString &email,
+       const QVariant &friends);
 
-    QString id() const;
-    QString username() const;
-    QString email() const;
-    QVariant friends() const;
+  QString id() const;
+  QString username() const;
+  QString email() const;
+  QVariant friends() const;
+  QJsonObject toJson() const;
 
 private:
-    QString m_id;
-    QString m_username;
-    QString m_email;
-    QVariant m_friends;
+  QString m_id;
+  QString m_username;
+  QString m_email;
+  QVariant m_friends;
 };
 
 #endif // USER_H

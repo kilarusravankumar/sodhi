@@ -1,6 +1,7 @@
 #ifndef REGISTER_H
 #define REGISTER_H
 
+#include "config.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QWidget>
@@ -11,7 +12,7 @@ class Register : public QWidget {
   Q_OBJECT
 
 public:
-  explicit Register(QWidget *parent = nullptr,
+  explicit Register(Config *config, QWidget *parent = nullptr,
                     QNetworkAccessManager *manager = nullptr);
 
 private slots:
@@ -22,6 +23,7 @@ signals:
   void registrationSuccessful();
 
 private:
+  Config *m_config;
   QLineEdit *usernameEdit;
   QLineEdit *emailEdit;
   QLineEdit *passwordEdit;

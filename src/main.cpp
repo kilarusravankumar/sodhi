@@ -13,10 +13,13 @@
 #include <QWidget>
 
 #include "mainwindow.h"
+#include "config.h"
 
 int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   app.setStyle(QStyleFactory::create("Fusion"));
+
+  Config config(".env");
 
   QString darktheme = R"(
         QWidget {
@@ -57,7 +60,7 @@ int main(int argc, char *argv[]) {
     )";
   app.setStyleSheet(darktheme);
 
-  MainWindow window;
+  MainWindow window(&config);
 
   window.show();
   return app.exec();

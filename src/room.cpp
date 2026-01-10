@@ -1,4 +1,5 @@
 #include "room.h"
+#include "message.h"
 
 Room::Room(const QString &id, const QString &name, const bool isDirectMsg,
            const std::vector<User> &users, std::vector<Message> &messages)
@@ -14,3 +15,5 @@ bool Room::isDirectMsg() const { return isDirectMsgFlag; }
 std::vector<User> Room::users() const { return roomUsers; }
 
 std::vector<Message> Room::messages() const { return roomMsgs; }
+
+void Room::appendMessage(Message &msg) { roomMsgs.push_back(msg); }

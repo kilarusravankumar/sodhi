@@ -46,6 +46,9 @@ add_library(sodhi_lib STATIC
     src/roomslayout.cpp
     src/room.cpp
     src/message.cpp
+    src/messagebubble.cpp
+    src/commandpalette.cpp
+    src/config.cpp
     include/mainwindow.h
     include/landingpage.h
     include/register.h
@@ -55,6 +58,9 @@ add_library(sodhi_lib STATIC
     include/roomslayout.h
     include/room.h
     include/message.h
+    include/messagebubble.h
+    include/commandpalette.h
+    include/config.h
 )
 
 target_include_directories(sodhi_lib PUBLIC include)
@@ -72,14 +78,83 @@ target_link_libraries(sodhi_lib PRIVATE
 # Create our executable, named "sodhi_client", from main.cpp
 #
 add_executable(sodhi
-    src/main.cpp
+src/main.cpp
+src/mainwindow.cpp
+src/landingpage.cpp
+src/register.cpp
+src/login.cpp
+src/user.cpp
+src/dashboard.cpp
+src/commandpalette.cpp
+src/room.cpp
+src/roomslayout.cpp
+src/message.cpp
+src/messagebubble.cpp
+src/friend.cpp
+src/config.cpp
+include/mainwindow.h
+include/landingpage.h
+include/register.h
+include/login.h
+include/user.h
+include/dashboard.h
+include/commandpalette.h
+include/room.h
+include/roomslayout.h
+include/message.h
+include/messagebubble.h
+include/friend.h
+include/config.h
 )
+
+target_include_directories(sodhi PUBLIC include)
 
 # --- Link Libraries ---
 #
-# Link our executable against our shared library.
+# Link our executable against the Qt Widgets library.
 #
-target_link_libraries(sodhi PRIVATE sodhi_lib Qt6::Widgets Qt6::Network Qt6::WebSockets)
+target_link_libraries(sodhi PRIVATE
+Qt6::Widgets
+Qt6::Network
+Qt6::WebSockets
+)
+
+# --- Tests ---
+enable_testing()
+find_package(Qt6 REQUIRED COMPONENTS Test)
+
+add_executable(sodhi_tests
+    tests/test_dashboard.cpp
+    src/mainwindow.cpp
+    src/landingpage.cpp
+    src/register.cpp
+    src/login.cpp
+    src/user.cpp
+    src/dashboard.cpp
+    src/messagebubble.cpp
+    src/room.cpp
+    src/roomslayout.cpp
+    src/message.cpp
+    src/commandpalette.cpp
+    src/config.cpp
+    include/mainwindow.h
+    include/landingpage.h
+    include/register.h
+    include/login.h
+    include/user.h
+    include/dashboard.h
+    include/messagebubble.h
+    include/room.h
+    include/roomslayout.h
+    include/message.h
+    include/commandpalette.h
+    include/config.h
+)
+
+target_include_directories(sodhi_tests PUBLIC include)
+target_link_libraries(sodhi_tests PRIVATE Qt6::Widgets Qt6::Network Qt6::WebSockets Qt6::Test)
+add_test(NAME sodhi_tests COMMAND sodhi_tests)
+
 
 
 # --- Testing Configuration ---

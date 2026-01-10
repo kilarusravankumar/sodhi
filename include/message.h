@@ -1,6 +1,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include "user.h"
 #include <QDateTime>
 #include <QJsonObject>
 #include <QString>
@@ -17,7 +18,7 @@ public:
 
   QString msgContent() const;
   QString sentTimestamp() const;
-  QString sentBy() const;
+  User sentBy() const;
 
   qint64 id() const;
   QUuid roomId() const;
@@ -30,6 +31,6 @@ private:
   QDateTime m_sentTimestamp;
   QUuid m_roomId;
   QUuid m_sentByUuid;
-  QString m_senderName;
+  User m_sender;
 };
 #endif

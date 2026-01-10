@@ -14,8 +14,9 @@
 #include <QVBoxLayout>
 #include <qnetworkaccessmanager.h>
 
-MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
-  manager = new QNetworkAccessManager(parent);
+MainWindow::MainWindow(Config *config, QWidget *parent)
+    : QWidget(parent), m_config(config) {
+  manager = new QNetworkAccessManager(this);
   setWindowTitle("Sodhi");
   setMinimumSize(300, 200);
 
@@ -66,7 +67,8 @@ void MainWindow::handleLoginSuccessful(const QString &activeToken,
 
   qDebug() << "Login successful! Switching to dashboard.";
 
-  Dashboard *dashboardPage = new Dashboard(this->activeToken, data, this);
+  Dashboard *dashboardPage =
+      new Dashboard(m_config, this->activeToken, data, this);
 
   int dashboardIndex = stackedWidget->addWidget(dashboardPage);
   stackedWidget->setCurrentIndex(dashboardIndex);
@@ -84,7 +86,7 @@ QWidget *MainWindow::createLandingPage() {
 }
 
 QWidget *MainWindow::createLoginPage(QNetworkAccessManager *manager) {
-  Login *loginPage = new Login(this, manager);
+  Login *loginPage = new Login(m_config, this, manager);
   connect(loginPage, &Login::backClicked, this, &MainWindow::showLandingPage);
   connect(loginPage, &Login::loginSuccessful, this,
           &MainWindow::handleLoginSuccessful);
@@ -92,7 +94,7 @@ QWidget *MainWindow::createLoginPage(QNetworkAccessManager *manager) {
 }
 
 QWidget *MainWindow::createRegisterPage() {
-  Register *registerPage = new Register(this, manager);
+  Register *registerPage = new Register(m_config, this, manager);
   connect(registerPage, &Register::backClicked, this,
           &MainWindow::showLandingPage);
   connect(registerPage, &Register::registrationSuccessful, this,

@@ -16,6 +16,7 @@ public:
   bool isDirectMsg() const;
   std::vector<User> users() const;
   std::vector<Message> messages() const;
+  void appendMessage(Message &msg);
 
 private:
   QString roomID;

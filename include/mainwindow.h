@@ -7,6 +7,7 @@
 #pragma once
 
 #include "user.h"
+#include "config.h"
 #include <QWidget>
 #include <qnetworkaccessmanager.h>
 
@@ -21,7 +22,7 @@ class MainWindow : public QWidget {
   Q_OBJECT
 
 public:
-  explicit MainWindow(QWidget *parent = nullptr);
+  explicit MainWindow(Config *config, QWidget *parent = nullptr);
   ~MainWindow();
   QString getActiveToken();
   QString getRefreshToken();
@@ -38,6 +39,7 @@ private slots:
   void showLandingPage();
 
 private:
+  Config *m_config;
   QString activeToken;
   QString refreshToken;
   QNetworkAccessManager *manager;
