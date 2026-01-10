@@ -5,6 +5,7 @@
 
 #include "login.h"
 #include "register.h"
+#include "config.h"
 
 class TestLoginRegister : public QObject
 {
@@ -18,7 +19,8 @@ private slots:
 void TestLoginRegister::testRegister_passwordsMismatch()
 {
     // Arrange
-    Register registerWidget;
+    Config config;
+    Register registerWidget(&config);
     QLineEdit *passEdit = registerWidget.findChild<QLineEdit*>("passwordEdit");
     QLineEdit *repeatPassEdit = registerWidget.findChild<QLineEdit*>("repeatPasswordEdit");
 
@@ -40,9 +42,10 @@ void TestLoginRegister::testRegister_passwordsMismatch()
 void TestLoginRegister::testLogin_successfulSignal()
 {
     // Arrange
+    Config config;
     // We need a QNetworkAccessManager for the constructor, but we won't use it.
     QNetworkAccessManager manager;
-    Login loginWidget(nullptr, &manager);
+    Login loginWidget(&config, nullptr, &manager);
     QSignalSpy spy(&loginWidget, &Login::loginSuccessful);
 
     // A sample successful JSON response, taken from login.cpp comments
