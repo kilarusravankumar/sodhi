@@ -1,50 +1,68 @@
-# Development
+# Sodhi (Rust Desktop App)
 
-Your new bare-bones project includes minimal organization with a single `main.rs` file and a few assets.
+A modern desktop application built with **Rust** and **Dioxus**, featuring a native WebView renderer.
+
+## 🚧 Current Status: Prototype
+This project is currently in the **prototyping phase**. We are building the authentication flows and core UI structure.
+
+## 🛠 Tech Stack
+
+- **Frontend Framework**: [Dioxus](https://dioxuslabs.com) (Rust)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com) (v3.4 via CDN)
+- **HTTP Client**: `reqwest`
+- **State Management**: Dioxus Signals & Context
+- **Platform**: Desktop (via `dioxus-desktop` / WebView)
+
+## ✨ Features implemented
+
+### Authentication UI
+- **Split-Screen Layout**: `AuthPage` component providing a side-by-side view of Login and Register forms.
+- **Login Form**: User authentication (UI only currently).
+- **Register Form**:
+  - Full form validation (length, special characters, email format).
+  - Real-time error feedback.
+  - Submits to `http://localhost:8080/api/v1/register`.
+- **Reusable Input Components**: Modular `Username`, `Password`, and `Email` components located in `src/components/input/`.
+
+### 🎨 Styling & Dark Mode
+- **Zero-Build Styling**: Tailwind CSS is currently **injected via CDN** in `main.rs` for rapid development.
+- **Dark Mode**: Fully supported using Tailwind's `dark:` variant.
+  - *Note*: The app respects the system theme preferences.
+
+## 📂 Project Structure
 
 ```
-project/
-├─ assets/ # Any assets that are used by the app should be placed here
-├─ src/
-│  ├─ main.rs # main.rs is the entry point to your application and currently contains all components for the app
-├─ Cargo.toml # The Cargo.toml file defines the dependencies and feature flags for your project
+src/
+├── main.rs                 # Entry point, Router configuration, Window setup
+├── state.rs                # Global AppState (User, Tokens)
+└── components/
+    ├── auth_page.rs        # Landing page with Login/Register split
+    ├── login.rs            # Login form logic
+    ├── register.rs         # Registration form with validation
+    └── input/              # Reusable form fields
+        ├── username.rs
+        ├── password.rs
+        └── email.rs
 ```
 
-### Automatic Tailwind (Dioxus 0.7+)
+## 🚀 Getting Started
 
-As of Dioxus 0.7, there no longer is a need to manually install tailwind. Simply `dx serve` and you're good to go!
+### Prerequisites
+1.  **Rust**: [Install Rust](https://www.rust-lang.org/tools/install)
+2.  **Dioxus CLI**:
+    ```bash
+    cargo install dioxus-cli
+    ```
+3.  **System Dependencies (Linux)**:
+    ```bash
+    sudo apt install libwebkit2gtk-4.0-dev build-essential libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+    ```
 
-Automatic tailwind is supported by checking for a file called `tailwind.css` in your app's manifest directory (next to Cargo.toml). To customize the file, use the dioxus.toml:
-
-```toml
-[application]
-tailwind_input = "my.css"
-tailwind_output = "assets/out.css" # also customize the location of the out file!
-```
-
-### Tailwind Manual Install
-
-To use tailwind plugins or manually customize tailwind, you can can install the Tailwind CLI and use it directly.
-
-### Tailwind
-1. Install npm: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm
-2. Install the Tailwind CSS CLI: https://tailwindcss.com/docs/installation/tailwind-cli
-3. Run the following command in the root of the project to start the Tailwind CSS compiler:
+### Running the App
+Start the development server with hot-reload:
 
 ```bash
-npx @tailwindcss/cli -i ./input.css -o ./assets/tailwind.css --watch
+dx serve --desktop
 ```
 
-### Serving Your App
-
-Run the following command in the root of your project to start developing with the default platform:
-
-```bash
-dx serve
-```
-
-To run for a different platform, use the `--platform platform` flag. E.g.
-```bash
-dx serve --platform desktop
-```
-
+*Note: Since we use the Tailwind CDN, an internet connection is required for styling to appear correctly during development.*
